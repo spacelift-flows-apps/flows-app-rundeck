@@ -21,72 +21,90 @@ If necessary, you can also find other apps in public repos of the https://github
 
 ## Overview
 
-This app demonstrates the standard patterns for Flows apps:
+This is a Rundeck integration app for Flows that allows managing Rundeck jobs and executions. It provides:
 
-- Clean configuration schema with secrets support
-- Simple block structure with proper error handling
+- Clean configuration schema with secrets support for the Rundeck API token
+- Blocks for listing jobs, listing executions, and getting execution details
+- Dynamic project selection via `suggestValues` dropdowns
 - Type-safe implementation with TypeScript
-- Comprehensive CI/CD pipeline
+- Shared Rundeck API client and type definitions
 
 ## Architecture
 
 ### App Structure
 
 ```text
-{{app_name}}/
-├── blocks/                   # Block implementations
-│   ├── index.ts              # Block registry and exports
-│   └── exampleBlock.ts       # Example block implementation
-├── .github/workflows/ci.yml  # CI/CD pipeline
-├── main.ts                   # App definition
-├── package.json              # Dependencies and scripts
-├── tsconfig.json             # TypeScript configuration
-└── README.md                 # Documentation and setup guide
+flows-app-rundeck/
+├── blocks/                      # Block implementations
+│   ├── index.ts                 # Block registry and exports
+│   ├── listJobs.ts              # List jobs in a project
+│   ├── listExecutions.ts        # List executions in a project
+│   └── getExecution.ts          # Get execution details by ID
+├── rundeck/                     # Rundeck API client and types
+│   ├── client.ts                # RundeckClient class + factory function
+│   └── types.ts                 # Shared Rundeck API response types
+├── utils/                       # Shared utilities
+│   └── suggestProjects.ts       # suggestValues handler for project selection
+├── .github/workflows/ci.yml     # CI/CD pipeline
+├── main.ts                      # App definition and configuration
+├── package.json                 # Dependencies and scripts
+├── tsconfig.json                # TypeScript configuration
+└── README.md                    # Documentation and setup guide
 ```
 
 ### Key Components
 
 #### Configuration (`main.ts`)
 
-The app requires two configuration values:
+The app requires the following configuration values:
 
-- `apiKey` (secret) - API authentication key
-- `baseUrl` (text) - API endpoint URL with default value
+- `rundeckUrl` (text, required) - Rundeck instance URL (e.g., https://your-rundeck-server:4440)
+- `apiToken` (secret, required) - Rundeck API token
+- `apiVersion` (number, optional) - Rundeck API version (default: 57)
 
-#### Block Organization (`blocks/`)
+#### Rundeck Client (`rundeck/`)
 
-The template uses a clean block organization pattern:
+- **`rundeck/client.ts`** - HTTP client for the Rundeck API. Handles authentication via `X-Rundeck-Auth-Token` header, JSON request/response handling, and error reporting. Provides `get`, `post`, `put`, `delete` methods.
+- **`rundeck/types.ts`** - Shared TypeScript interfaces for Rundeck API responses: `RundeckProject`, `RundeckJob`, `RundeckExecution`, `ExecutionsResponse`.
+
+#### Utilities (`utils/`)
+
+- **`utils/suggestProjects.ts`** - Shared `suggestValues` handler that fetches projects from Rundeck and returns them as dropdown options. Used by blocks that need a project selector. Supports filtering via `searchPhrase`.
+
+#### Blocks (`blocks/`)
 
 - **`blocks/index.ts`** - Central registry that exports all blocks as a dictionary
-- **`blocks/exampleBlock.ts`** - Example block implementation
-- **`main.ts`** - Imports blocks via `Object.values(blocks)` for clean registration
-
-**Example Block Features:**
-
-- Accepts a text message as input
-- Uses the configured API key and base URL
-- Returns a processed result or throws errors
-- Follows standard error handling patterns
+- **`blocks/listJobs.ts`** - Lists jobs in a Rundeck project with optional filters (job name, group path). Uses `suggestValues` for project selection.
+- **`blocks/listExecutions.ts`** - Lists executions for a Rundeck project with optional status filter and pagination. Uses `suggestValues` for project selection.
+- **`blocks/getExecution.ts`** - Gets details of a specific execution by ID.
 
 ## Implementation Patterns
 
 ### Block Structure
 
 ```typescript
-const exampleBlock: AppBlock = {
+const myBlock: AppBlock = {
   name: "Block Name",
   description: "What this block does",
   category: "Category",
 
   inputs: {
     default: {
-      name: "Input Name",
-      description: "Input description",
       config: {
-        /* JSON Schema */
+        /* input config fields with JSON Schema types */
       },
-      onEvent: async (input, { events }) => {
-        // Block logic with error handling
+      onEvent: async (input) => {
+        const { rundeckUrl, apiToken, apiVersion } = input.app.config;
+        const { myField } = input.event.inputConfig;
+
+        const client = createRundeckClient({
+          rundeckUrl,
+          apiToken,
+          apiVersion: apiVersion ?? 57,
+        });
+
+        const result = await client.get<MyType>("endpoint");
+        await events.emit(result);
       },
     },
   },
@@ -95,6 +113,7 @@ const exampleBlock: AppBlock = {
     default: {
       name: "Output Name",
       description: "Output description",
+      default: true,
       type: {
         /* JSON Schema */
       },
@@ -102,6 +121,27 @@ const exampleBlock: AppBlock = {
   },
 };
 ```
+
+### suggestValues Pattern
+
+Use `suggestValues` on input config fields to provide dynamic dropdown options fetched from the Rundeck API. The shared `suggestProjects` handler in `utils/suggestProjects.ts` can be reused by any block that needs project selection:
+
+```typescript
+import { suggestProjects } from "../utils/suggestProjects.ts";
+
+// In a block's input config:
+config: {
+  project: {
+    name: "Project",
+    description: "The Rundeck project",
+    type: "string",
+    required: true,
+    suggestValues: suggestProjects,
+  },
+},
+```
+
+To create new `suggestValues` handlers, follow the same pattern: receive `input` with `app.config` and optional `searchPhrase`, return `{ suggestedValues: [{ label, value }] }`.
 
 ### Error Handling Pattern
 
@@ -114,8 +154,7 @@ await events.emit(result);
 ### Configuration Access
 
 ```typescript
-const apiKey = input.app.config.apiKey as string;
-const baseUrl = input.app.config.baseUrl as string;
+const { rundeckUrl, apiToken, apiVersion } = input.app.config;
 ```
 
 ### Schema
@@ -152,10 +191,10 @@ The template includes a complete CI/CD system:
 
 ### Code Organization
 
-- Modular block structure in `blocks/` directory
-- Central block registry for easy management
-- Clear separation of concerns
-- Comprehensive type definitions
+- Block implementations in `blocks/` directory
+- Shared Rundeck API client and types in `rundeck/` directory
+- Shared utilities (e.g., `suggestValues` handlers) in `utils/` directory
+- Central block registry in `blocks/index.ts`
 
 ### Error Handling
 
@@ -182,12 +221,20 @@ The template includes a complete CI/CD system:
 1. Create block file in `blocks/` directory (e.g., `blocks/myBlock.ts`)
 2. Import and add to `blocks` dictionary in `blocks/index.ts`
 3. Export from `blocks/index.ts` for external use
-4. Test with `npm run typecheck`
+4. Use types from `rundeck/types.ts` — add new types there if needed
+5. Use `createRundeckClient` from `rundeck/client.ts` for API calls
+6. Use `suggestProjects` from `utils/suggestProjects.ts` if the block needs project selection
+7. Test with `npm run typecheck`
 
 **Example:**
 
 ```typescript
 // blocks/myBlock.ts
+import { AppBlock, events } from "@slflows/sdk/v1";
+import { createRundeckClient } from "../rundeck/client.ts";
+import type { MyType } from "../rundeck/types.ts";
+import { suggestProjects } from "../utils/suggestProjects.ts";
+
 export const myBlock: AppBlock = {
   /* block definition */
 };
@@ -195,10 +242,17 @@ export const myBlock: AppBlock = {
 // blocks/index.ts
 import { myBlock } from "./myBlock.ts";
 export const blocks = {
-  example: exampleBlock,
-  my: myBlock, // Add here
+  listJobs,
+  listExecutions,
+  getExecution,
+  myBlock, // Add here
 } as const;
 ```
+
+### Adding Rundeck API Types
+
+1. Add new interfaces to `rundeck/types.ts`
+2. Import them in block files with `import type { ... } from "../rundeck/types.ts"`
 
 ### Adding Configuration
 
@@ -211,8 +265,6 @@ export const blocks = {
 1. Add to package.json dependencies
 2. Import in relevant files
 3. Ensure TypeScript types are available
-
-This template provides a solid foundation for building production-ready Flows apps with modern development practices and automated deployment.
 
 ## Testing the App
 

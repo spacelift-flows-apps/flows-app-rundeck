@@ -10,11 +10,11 @@ A [Flows](https://useflows.com) app that integrates with [Rundeck](https://www.r
 
 ## Configuration
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| Rundeck URL | string | yes | Your Rundeck instance URL |
-| API Token | secret | yes | Rundeck API token |
-| API Version | number | no | API version (default: 57) |
+| Field       | Type   | Required | Description               |
+| ----------- | ------ | -------- | ------------------------- |
+| Rundeck URL | string | yes      | Your Rundeck instance URL |
+| API Token   | secret | yes      | Rundeck API token         |
+| API Version | number | no       | API version (default: 57) |
 
 ## Development
 

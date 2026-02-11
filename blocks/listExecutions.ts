@@ -41,7 +41,12 @@ export const listExecutions: AppBlock = {
       },
       onEvent: async (input) => {
         const { rundeckUrl, apiToken, apiVersion } = input.app.config;
-        const { project, status, max = 20, offset = 0 } = input.event.inputConfig;
+        const {
+          project,
+          status,
+          max = 20,
+          offset = 0,
+        } = input.event.inputConfig;
 
         const client = createRundeckClient({
           rundeckUrl,

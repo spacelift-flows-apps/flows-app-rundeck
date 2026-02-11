@@ -12,7 +12,12 @@ export async function suggestProjects(input: SuggestValuesInput) {
 
   try {
     const { rundeckUrl, apiToken, apiVersion } = input.app.config;
-    console.log("suggestProjects config - rundeckUrl:", rundeckUrl, "apiVersion:", apiVersion);
+    console.log(
+      "suggestProjects config - rundeckUrl:",
+      rundeckUrl,
+      "apiVersion:",
+      apiVersion,
+    );
 
     const client = createRundeckClient({
       rundeckUrl,
@@ -41,7 +46,12 @@ export async function suggestProjects(input: SuggestValuesInput) {
       })),
     };
 
-    console.log("suggestProjects returning", result.suggestedValues.length, "values:", JSON.stringify(result.suggestedValues));
+    console.log(
+      "suggestProjects returning",
+      result.suggestedValues.length,
+      "values:",
+      JSON.stringify(result.suggestedValues),
+    );
     return result;
   } catch (error) {
     console.error("suggestProjects error:", error);

@@ -21,7 +21,19 @@ export const listExecutions: AppBlock = {
         status: {
           name: "Status Filter",
           description: "Filter executions by status",
-          type: "string",
+          type: {
+            type: "string",
+            enum: [
+              "running",
+              "succeeded",
+              "failed",
+              "aborted",
+              "timedout",
+              "failed-with-retry",
+              "scheduled",
+              "other",
+            ],
+          },
           required: false,
         },
         max: {

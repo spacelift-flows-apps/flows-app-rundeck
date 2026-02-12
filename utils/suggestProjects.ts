@@ -1,5 +1,5 @@
-import { createRundeckClient } from "../rundeck/client.ts";
-import type { RundeckProject } from "../rundeck/types.ts";
+import {createRundeckClient} from "../rundeck/client.ts";
+import type {RundeckProject} from "../rundeck/types.ts";
 
 interface SuggestValuesInput {
   app: { config: Record<string, any> };
@@ -8,16 +8,8 @@ interface SuggestValuesInput {
 }
 
 export async function suggestProjects(input: SuggestValuesInput) {
-  console.log("suggestProjects called, searchPhrase:", input.searchPhrase);
-
   try {
     const { rundeckUrl, apiToken, apiVersion } = input.app.config;
-    console.log(
-      "suggestProjects config - rundeckUrl:",
-      rundeckUrl,
-      "apiVersion:",
-      apiVersion,
-    );
 
     const client = createRundeckClient({
       rundeckUrl,
@@ -26,7 +18,6 @@ export async function suggestProjects(input: SuggestValuesInput) {
     });
 
     const projects = await client.get<RundeckProject[]>("projects");
-    console.log("suggestProjects fetched", projects.length, "projects");
 
     const filtered = input.searchPhrase
       ? projects.filter(
@@ -39,22 +30,13 @@ export async function suggestProjects(input: SuggestValuesInput) {
         )
       : projects;
 
-    const result = {
+    return {
       suggestedValues: filtered.map((project) => ({
         label: project.label || project.name,
         value: project.name,
       })),
     };
-
-    console.log(
-      "suggestProjects returning",
-      result.suggestedValues.length,
-      "values:",
-      JSON.stringify(result.suggestedValues),
-    );
-    return result;
   } catch (error) {
-    console.error("suggestProjects error:", error);
     return { suggestedValues: [] };
   }
 }

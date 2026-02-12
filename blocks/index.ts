@@ -12,10 +12,4 @@ export const blocks = {
   subscribeToExecution,
 } as const;
 
-export {
-  listJobs,
-  listExecutions,
-  getExecution,
-  runJob,
-  subscribeToExecution,
-};
+export { listJobs, listExecutions, getExecution, runJob, subscribeToExecution };

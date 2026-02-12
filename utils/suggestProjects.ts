@@ -1,5 +1,5 @@
-import {createRundeckClient} from "../rundeck/client.ts";
-import type {RundeckProject} from "../rundeck/types.ts";
+import { createRundeckClient } from "../rundeck/client.ts";
+import type { RundeckProject } from "../rundeck/types.ts";
 
 interface SuggestValuesInput {
   app: { config: Record<string, any> };

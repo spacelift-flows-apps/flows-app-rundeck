@@ -57,3 +57,9 @@ export interface ExecutionsResponse {
   };
   executions: RundeckExecution[];
 }
+
+export interface RunJobRequest {
+  options?: Record<string, string>;
+  filter?: string;
+  loglevel?: string;
+}

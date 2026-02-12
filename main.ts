@@ -2,26 +2,39 @@ import { defineApp } from "@slflows/sdk/v1";
 import { blocks } from "./blocks/index";
 
 export const app = defineApp({
-  name: "{{APP_NAME}}",
-  installationInstructions:
-    "{{APP_DESCRIPTION}}\n\nTo install:\n1. Add your API key\n2. Configure the base URL if needed\n3. Start using the blocks in your flows",
+  name: "Rundeck Integration",
+  installationInstructions: `Rundeck integration app for managing jobs and executions.
+
+To install:
+1. Add your Rundeck instance URL (e.g., https://your-rundeck-server:4440)
+2. Add your Rundeck API token (generate from User Profile > API Tokens)
+3. Optionally adjust the API version (default: 57)
+4. Start using the blocks in your flows`,
 
   blocks,
 
   config: {
-    apiKey: {
-      name: "API Key",
-      description: "Your service API key",
+    rundeckUrl: {
+      name: "Rundeck URL",
+      description:
+        "Your Rundeck instance URL (e.g., https://your-rundeck-server:4440)",
+      type: "string",
+      required: true,
+    },
+    apiToken: {
+      name: "API Token",
+      description:
+        "Your Rundeck API token (generate from User Profile > API Tokens)",
       type: "string",
       required: true,
       sensitive: true,
     },
-    baseUrl: {
-      name: "Base URL",
-      description: "API base URL",
-      type: "string",
+    apiVersion: {
+      name: "API Version",
+      description: "Rundeck API version to use",
+      type: "number",
       required: false,
-      default: "https://api.example.com",
+      default: 57,
     },
   },
 });

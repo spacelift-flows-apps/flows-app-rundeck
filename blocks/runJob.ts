@@ -86,7 +86,7 @@ export const runJob: AppBlock = {
           nodeFilter,
           logLevel = "INFO",
         } = input.event.inputConfig;
-        const pollInterval = input.block.config.pollInterval ?? 5;
+        const pollInterval = input.block.config.pollInterval;
 
         const client = createRundeckClient({
           rundeckUrl,
@@ -112,7 +112,7 @@ export const runJob: AppBlock = {
         await events.emit(mapped);
 
         // Optionally start tracking execution state changes
-        const trackExecution = input.block.config.trackExecution ?? true;
+        const trackExecution = input.block.config.trackExecution;
         if (trackExecution) {
           await startTracking({
             exec,
@@ -129,8 +129,8 @@ export const runJob: AppBlock = {
     const trackingKey = input.timer.payload;
     const pendingEventId = input.timer.pendingEvent?.id;
     const { rundeckUrl, apiToken, apiVersion } = input.app.config;
-    const pollInterval = input.block.config.pollInterval ?? 5;
-    const maxRetries = input.block.config.maxRetries ?? 3;
+    const pollInterval = input.block.config.pollInterval;
+    const maxRetries = input.block.config.maxRetries;
 
     if (!pendingEventId) {
       console.error(

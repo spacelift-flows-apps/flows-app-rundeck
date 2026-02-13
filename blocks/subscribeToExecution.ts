@@ -45,7 +45,7 @@ export const subscribeToExecution: AppBlock = {
       onEvent: async (input) => {
         const { rundeckUrl, apiToken, apiVersion } = input.app.config;
         const { executionId } = input.event.inputConfig;
-        const pollInterval = input.block.config.pollInterval ?? 5;
+        const pollInterval = input.block.config.pollInterval;
 
         const client = createRundeckClient({
           rundeckUrl,
@@ -71,8 +71,8 @@ export const subscribeToExecution: AppBlock = {
     const trackingKey = input.timer.payload;
     const pendingEventId = input.timer.pendingEvent?.id;
     const { rundeckUrl, apiToken, apiVersion } = input.app.config;
-    const pollInterval = input.block.config.pollInterval ?? 5;
-    const maxRetries = input.block.config.maxRetries ?? 3;
+    const pollInterval = input.block.config.pollInterval;
+    const maxRetries = input.block.config.maxRetries;
 
     if (!pendingEventId) {
       console.error(

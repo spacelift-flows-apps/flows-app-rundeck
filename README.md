@@ -7,6 +7,8 @@ A [Flows](https://useflows.com) app that integrates with [Rundeck](https://www.r
 - **List Project Jobs** - List jobs in a project, with optional name/group filters
 - **List Project Executions** - List executions in a project, with status filter and pagination
 - **Get Execution** - Get details of a single execution by ID
+- **Run Job** - Trigger a Rundeck job and optionally track its execution state changes until completion
+- **Subscribe to Execution** - Subscribe to a Rundeck execution by ID and track its state changes until completion
 
 ## Configuration
 

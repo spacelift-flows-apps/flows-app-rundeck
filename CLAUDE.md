@@ -25,7 +25,7 @@ If necessary, you can also find other apps in public repos of the https://github
 This is a Rundeck integration app for Flows that allows managing Rundeck jobs and executions. It provides:
 
 - Clean configuration schema with secrets support for the Rundeck API token
-- Blocks for listing jobs, listing executions, and getting execution details
+- Blocks for listing jobs, listing executions, getting execution details, running jobs, and subscribing to executions
 - Dynamic project selection via `suggestValues` dropdowns
 - Type-safe implementation with TypeScript
 - Shared Rundeck API client and type definitions
@@ -40,12 +40,20 @@ flows-app-rundeck/
 │   ├── index.ts                 # Block registry and exports
 │   ├── listJobs.ts              # List jobs in a project
 │   ├── listExecutions.ts        # List executions in a project
-│   └── getExecution.ts          # Get execution details by ID
+│   ├── getExecution.ts          # Get execution details by ID
+│   ├── runJob.ts                # Run a job and optionally track execution
+│   └── subscribeToExecution.ts  # Subscribe to execution state changes
 ├── rundeck/                     # Rundeck API client and types
 │   ├── client.ts                # RundeckClient class + factory function
 │   └── types.ts                 # Shared Rundeck API response types
 ├── utils/                       # Shared utilities
-│   └── suggestProjects.ts       # suggestValues handler for project selection
+│   ├── suggestProjects.ts       # suggestValues handler for project selection
+│   ├── suggestJobs.ts           # suggestValues handler for job selection
+│   ├── mapExecution.ts          # Execution mapping and JSON Schema
+│   ├── executionStates.ts       # Terminal state types and helpers
+│   └── executionPoller.ts       # Shared polling/tracking utilities
+├── examples/                    # Example Rundeck job definitions
+│   └── test-job.yaml            # Test jobs for development
 ├── .github/workflows/ci.yml     # CI/CD pipeline
 ├── main.ts                      # App definition and configuration
 ├── package.json                 # Dependencies and scripts
@@ -71,6 +79,14 @@ The app requires the following configuration values:
 #### Utilities (`utils/`)
 
 - **`utils/suggestProjects.ts`** - Shared `suggestValues` handler that fetches projects from Rundeck and returns them as dropdown options. Used by blocks that need a project selector. Supports filtering via `searchPhrase`.
+- **`utils/suggestJobs.ts`** - Shared `suggestValues` handler that fetches jobs for a given project. Used by the Run Job block. Requires `block.config.project` to be set.
+- **`utils/mapExecution.ts`** - Maps raw `RundeckExecution` API responses to a clean output format. Also exports `executionSchema` (JSON Schema) used by execution-related block outputs.
+- **`utils/executionStates.ts`** - Defines the `TerminalState` union type and `isTerminalState()` type guard for Rundeck execution terminal states (`succeeded`, `failed`, `failed-with-retry`, `aborted`, `timedout`).
+- **`utils/executionPoller.ts`** - Shared execution polling utilities used by `runJob` and `subscribeToExecution`. Exports:
+  - `TrackingState` interface — shape of KV tracking entries
+  - `startTracking()` — creates a pending event, stores tracking state in KV (key: `tracking:{parentEventId}`), and sets the first poll timer
+  - `pollExecution()` — the timer handler body: reads tracking from KV, fetches execution, emits state changes, handles terminal states/retry/reschedule
+  - `cleanupStaleTracking()` — hourly cleanup that cancels pending events and deletes KV entries older than 24 hours
 
 #### Blocks (`blocks/`)
 
@@ -78,6 +94,8 @@ The app requires the following configuration values:
 - **`blocks/listJobs.ts`** - Lists jobs in a Rundeck project with optional filters (job name, group path). Uses `suggestValues` for project selection.
 - **`blocks/listExecutions.ts`** - Lists executions for a Rundeck project with optional status filter and pagination. Uses `suggestValues` for project selection.
 - **`blocks/getExecution.ts`** - Gets details of a specific execution by ID.
+- **`blocks/runJob.ts`** - Triggers a Rundeck job and optionally tracks its execution state changes. Has a `trackExecution` boolean config (default: `true`) to control whether polling is enabled. Emits immediately on default output ("Job Submitted"), then polls and emits state changes on "stateChanged" output. Uses shared polling utilities from `utils/executionPoller.ts`.
+- **`blocks/subscribeToExecution.ts`** - Subscribes to a Rundeck execution by ID and polls for state changes until a terminal state is reached. Uses shared polling utilities from `utils/executionPoller.ts`. Emits on default output ("State Changed") each time the status changes.
 
 ## Implementation Patterns
 
@@ -225,7 +243,10 @@ The template includes a complete CI/CD system:
 4. Use types from `rundeck/types.ts` — add new types there if needed
 5. Use `createRundeckClient` from `rundeck/client.ts` for API calls
 6. Use `suggestProjects` from `utils/suggestProjects.ts` if the block needs project selection
-7. Test with `npm run typecheck`
+7. Use `suggestJobs` from `utils/suggestJobs.ts` if the block needs job selection (requires `block.config.project`)
+8. For blocks that poll execution state, use the shared utilities from `utils/executionPoller.ts` (`startTracking`, `pollExecution`, `cleanupStaleTracking`) and terminal state helpers from `utils/executionStates.ts`
+9. Use `mapExecution` and `executionSchema` from `utils/mapExecution.ts` for execution output formatting
+10. Test with `npm run typecheck`
 
 **Example:**
 
@@ -246,6 +267,8 @@ export const blocks = {
   listJobs,
   listExecutions,
   getExecution,
+  runJob,
+  subscribeToExecution,
   myBlock, // Add here
 } as const;
 ```

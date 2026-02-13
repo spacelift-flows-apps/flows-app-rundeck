@@ -21,6 +21,13 @@ export async function startTracking(options: {
 }) {
   const { exec, parentEventId, outputKey, pollInterval } = options;
   const mapped = mapExecution(exec);
+
+  // If the execution is already in a terminal state, emit immediately and skip polling.
+  if (isTerminalState(exec.status)) {
+    await events.emit(mapped, { outputKey, parentEventId });
+    return;
+  }
+
   const trackingKey = `tracking:${parentEventId}`;
 
   const pendingEventId = await events.createPending({

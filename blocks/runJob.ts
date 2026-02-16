@@ -117,7 +117,7 @@ export const runJob: AppBlock = {
           await startTracking({
             exec,
             parentEventId: input.event.id,
-            outputKey: "stateChanged",
+            outputKey: "statusChanged",
             pollInterval,
           });
         }
@@ -149,7 +149,7 @@ export const runJob: AppBlock = {
       client,
       pollInterval,
       maxRetries,
-      outputKey: "stateChanged",
+      outputKey: "statusChanged",
     });
   },
 
@@ -174,10 +174,10 @@ export const runJob: AppBlock = {
       default: true,
       type: executionSchema,
     },
-    stateChanged: {
-      name: "State Changed",
+    statusChanged: {
+      name: "Status Changed",
       description:
-        "Emitted each time the execution status changes during polling, including terminal states (succeeded, failed, aborted, timedout, failed-with-retry)",
+        "Emitted each time the execution status changes during polling, including terminal statuses (succeeded, failed, aborted, timedout, failed-with-retry)",
       type: executionSchema,
     },
   },

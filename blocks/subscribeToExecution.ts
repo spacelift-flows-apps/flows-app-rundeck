@@ -110,9 +110,9 @@ export const subscribeToExecution: AppBlock = {
 
   outputs: {
     default: {
-      name: "State Changed",
+      name: "Status Changed",
       description:
-        "Emitted each time the execution status changes during polling, including terminal states (succeeded, failed, aborted, timedout)",
+        "Emitted each time the execution status changes during polling, including terminal statuses (succeeded, failed, aborted, timedout)",
       default: true,
       type: executionSchema,
     },

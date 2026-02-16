@@ -2,7 +2,7 @@ import { events, kv, timers } from "@slflows/sdk/v1";
 import type { RundeckClient } from "../rundeck/client.ts";
 import type { RundeckExecution } from "../rundeck/types.ts";
 import { mapExecution } from "./mapExecution.ts";
-import { isTerminalState } from "./executionStates.ts";
+import { isTerminalStatus } from "./executionStatuses.ts";
 
 export interface TrackingState {
   executionId: number;
@@ -22,8 +22,8 @@ export async function startTracking(options: {
   const { exec, parentEventId, outputKey, pollInterval } = options;
   const mapped = mapExecution(exec);
 
-  // If the execution is already in a terminal state, emit immediately and skip polling.
-  if (isTerminalState(exec.status)) {
+  // If the execution is already in a terminal status, emit immediately and skip polling.
+  if (isTerminalStatus(exec.status)) {
     await events.emit(mapped, { outputKey, parentEventId });
     return;
   }
@@ -82,7 +82,7 @@ export async function pollExecution(
         value: { ...tracking, lastStatus: exec.status, errorCount: 0 },
       });
 
-      if (isTerminalState(exec.status)) {
+      if (isTerminalStatus(exec.status)) {
         await events.emit(mapped, {
           outputKey,
           complete: pendingEventId,
